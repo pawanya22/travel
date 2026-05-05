@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased selection:bg-cyan-400 selection:text-black">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beyond | Curated Adventures</title>
+
+    <!-- Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Syncopate:wght@700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.19/bundled/lenis.min.js"></script>
+
+    <style>
+        body {
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+            cursor: none;
+            background-color: #000; /* Fallback */
+        }
+
+        .font-heading {
+            font-family: 'Syncopate', sans-serif;
+            letter-spacing: -0.05em;
+        }
+
+        .font-accent {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* --- GLOBAL AI BACKGROUND --- */
+        #global-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    overflow: hidden;
+}
+
+/* LEFT IMAGE */
+.bg-left {
+    position: absolute;
+    inset: 0;
+    background: url('https://images.unsplash.com/photo-1539498508910-091b5e859b1d?q=100&w=2400') no-repeat center / cover;
+    mask-image: linear-gradient(to right, black 60%, transparent 100%);
+    will-change: transform;
+}
+
+/* RIGHT IMAGE */
+.bg-right {
+    position: absolute;
+    inset: 0;
+    background: url('https://images.unsplash.com/photo-1568454537842-d933259bb258?q=100&w=2400') no-repeat center / cover;
+    mask-image: linear-gradient(to left, black 60%, transparent 100%);
+    will-change: transform;
+}
+
+        /* WebGL Background (Particles) */
+        #webgl-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Custom Cursor */
+        #cursor-dot {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        #cursor-ring {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, border-color 0.3s, background-color 0.3s, backdrop-filter 0.3s;
+        }
+
+        /* Noise Overlay */
+        .noise {
+            position: fixed;
+            inset: 0;
+            z-index: 5;
+            opacity: 0.04;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        /* Text Masking */
+        .line-mask {
+            overflow: hidden;
+            display: inline-block;
+            padding-bottom: 0.1em;
+        }
+
+        .line-inner {
+            display: inline-block;
+            transform: translateY(110%);
+            will-change: transform;
+        }
+
+        /* Glassmorphism Elements */
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+            transition: left 0.7s ease;
+        }
+
+        .glass-card:hover::before {
+            left: 150%;
+        }
+
+        /* CTA Button Glow */
+        .cta-glow {
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 220, 130, 0.2);
+        }
+
+        .cta-glow::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            background: linear-gradient(45deg, #00dc82, #00bbff, #ff00ea);
+            border-radius: inherit;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            filter: blur(12px);
+        }
+
+        .cta-glow:hover::before {
+            opacity: 1;
+        }
+
+        /* Hide Scrollbars */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        * {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+        .animate-float {
+            animation: float 10s infinite ease-in-out;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="global-bg">
+    <div class="bg-left"></div>
+    <div class="bg-right"></div>
+</div>
+    <div class="noise"></div>
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+    <div id="webgl-container"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 w-full z-50 px-6 md:px-12 py-5 flex justify-between items-center glass-nav transition-all duration-500">
+        <div class="font-heading text-xl font-bold tracking-widest text-white drop-shadow-md">BEYOND</div>
+        <div class="hidden md:flex gap-10 font-accent text-sm uppercase tracking-wider text-white/90">
+            <a href="#about" class="hover:text-cyan-400 transition-colors duration-300 drop-shadow-md">About</a>
+            <a href="#experiences" class="hover:text-fuchsia-400 transition-colors duration-300 drop-shadow-md">Experiences</a>
+            <a href="#why-us" class="hover:text-amber-400 transition-colors duration-300 drop-shadow-md">Why Trust Us</a>
+        </div>
+        <button class="font-accent text-xs uppercase tracking-wider bg-white/10 border border-white/30 rounded-full px-8 py-3 hover:bg-white hover:text-black hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all duration-500 backdrop-blur-md">
+            Menu
+        </button>
+    </nav>
+
+    <main id="lenis-wrapper" class="relative w-full z-10">
+
+        <!-- 1. HERO SECTION -->
+        <section id="hero" class="relative h-screen flex flex-col items-center justify-center text-center px-4 overflow-hidden">
+            
+            <!-- Colorful Ambient Orbs to enhance the AI image -->
+            <div class="absolute top-[20%] left-[15%] w-72 h-72 bg-cyan-500/30 rounded-full blur-[120px] z-0 animate-float mix-blend-screen pointer-events-none"></div>
+            <div class="absolute bottom-[20%] right-[15%] w-96 h-96 bg-fuchsia-600/30 rounded-full blur-[120px] z-0 animate-float mix-blend-screen pointer-events-none" style="animation-delay: -5s;"></div>
+
+            <!-- Content -->
+            <div class="relative z-20 max-w-7xl w-full flex flex-col items-center">
+                <p class="font-accent uppercase tracking-[0.5em] text-xs md:text-sm text-cyan-300 mb-6 hero-reveal opacity-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">A New Era of Exploration</p>
+                
+                <h1 class="font-heading text-5xl md:text-6xl lg:text-[6.5vw] xl:text-[6vw] font-bold leading-[1.1] mb-8 tracking-tight">
+                    <span class="line-mask"><span class="line-inner hero-text drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)]">EXPLORE</span></span><br>
+                    <span class="line-mask"><span class="line-inner hero-text text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-fuchsia-400 to-amber-300 drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)]">BEYOND THE</span></span><br>
+                    <span class="line-mask"><span class="line-inner hero-text drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)]">SURFACE</span></span>
+                </h1>
+                
+                <p class="font-accent text-white/90 text-sm md:text-base max-w-2xl mx-auto mb-12 hero-reveal opacity-0 leading-relaxed drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    Dive into crystal-clear oceans. Hike through untouched landscapes. Experience adventure like never before with curated journeys designed for thrill seekers and nature lovers.
+                </p>
+
+                <div class="hero-reveal opacity-0">
+                    <button class="cta-glow relative font-accent bg-white text-black rounded-full px-10 py-4 text-sm uppercase font-bold tracking-widest transition-all duration-500 hover:scale-105 hover:bg-gray-100">
+                        Start Your Adventure
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scroll Indicator -->
+            <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 hero-reveal opacity-0 z-20">
+                <span class="text-[10px] font-accent uppercase tracking-[0.3em] text-white/80 drop-shadow-md">Scroll to Descend</span>
+                <div class="w-[1px] h-16 bg-gradient-to-b from-cyan-400 to-transparent animate-pulse"></div>
+            </div>
+        </section>
+
+        <!-- 2. ABOUT SECTION -->
+        <section id="about" class="relative min-h-screen flex items-center py-32 px-6 md:px-20 z-10">
+            <div class="absolute top-1/2 left-0 w-[500px] h-[500px] bg-cyan-900/30 rounded-full blur-[150px] -translate-y-1/2 pointer-events-none"></div>
+
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
+                <div class="lg:col-span-7">
+                    <h2 class="font-heading text-4xl md:text-6xl lg:text-[5rem] font-bold leading-[1] text-white drop-shadow-xl">
+                        <span class="line-mask"><span class="line-inner about-line">WHERE</span></span><br>
+                        <span class="line-mask"><span class="line-inner about-line text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">ADVENTURE</span></span><br>
+                        <span class="line-mask"><span class="line-inner about-line">MEETS</span></span><br>
+                        <span class="line-mask"><span class="line-inner about-line">PURPOSE.</span></span>
+                    </h2>
+                </div>
+
+                <div class="lg:col-span-5 lg:pl-12">
+                    <div class="w-16 h-[2px] bg-gradient-to-r from-cyan-500 to-fuchsia-500 mb-8"></div>
+                    <p class="font-accent text-xl text-white leading-relaxed mb-6 drop-shadow-md">
+                        We craft unforgettable outdoor experiences that connect you with nature in its purest form.
+                    </p>
+                    <p class="text-white/80 font-light leading-relaxed drop-shadow-md">
+                        From deep-sea diving to breathtaking mountain trails, every journey is designed with safety, excitement, and discovery in mind. We believe in high-fidelity exploration.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. EXPERIENCES SECTION -->
+        <section id="experiences" class="relative z-10">
+            <div class="pin-wrapper h-screen w-full sticky top-0 overflow-hidden flex flex-col justify-center">
+                
+                <div class="absolute top-[15%] left-1/2 -translate-x-1/2 w-full text-center pointer-events-none opacity-10">
+                    <h3 class="font-heading text-[18vw] font-bold text-white whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-b from-white to-transparent">SEEKERS</h3>
+                </div>
+
+                <div class="relative z-10 mb-10 px-6 md:px-20 max-w-7xl mx-auto w-full">
+                    <p class="font-accent uppercase text-fuchsia-400 tracking-widest text-sm mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">The Catalog</p>
+                    <h2 class="font-heading text-4xl md:text-5xl font-bold drop-shadow-lg">CHOOSE YOUR ADVENTURE</h2>
+                </div>
+
+                <div class="horizontal-container flex gap-8 md:gap-16 px-6 md:px-20 w-[140vw] md:w-[120vw]">
+                    
+                    <!-- Card 1 -->
+                    <div class="w-[75vw] md:w-[40vw] shrink-0">
+                        <div class="group relative rounded-3xl overflow-hidden h-[50vh] md:h-[60vh] shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-white/20">
+                            <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover transform transition-transform duration-1000 group-hover:scale-110 img-parallax" alt="Deep Dive">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-70"></div>
+                            
+                            <div class="absolute bottom-0 left-0 p-8 md:p-10 w-full">
+                                <div class="flex justify-between items-end">
+                                    <div>
+                                        <span class="font-accent text-xs text-cyan-400 uppercase tracking-widest mb-3 block font-bold">01 / Ocean</span>
+                                        <h4 class="font-heading text-3xl md:text-4xl font-bold mb-3">DIVING</h4>
+                                    </div>
+                                    <div class="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center transform translate-y-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100 bg-white/10 backdrop-blur-sm">
+                                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 13L13 1M13 1H4M13 1V10" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </div>
+                                </div>
+                                <p class="text-white/80 text-sm font-accent leading-relaxed max-w-sm transform transition-all duration-500 group-hover:text-white mt-2">
+                                    Explore vibrant marine life and hidden underwater worlds with guided diving experiences for all skill levels.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="w-[75vw] md:w-[40vw] shrink-0">
+                        <div class="group relative rounded-3xl overflow-hidden h-[50vh] md:h-[60vh] shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-white/20">
+                            <img src="https://images.unsplash.com/photo-1551632432-38d0fc9789d4?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover transform transition-transform duration-1000 group-hover:scale-110 img-parallax" alt="Mountain Hike">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-70"></div>
+                            
+                            <div class="absolute bottom-0 left-0 p-8 md:p-10 w-full">
+                                <div class="flex justify-between items-end">
+                                    <div>
+                                        <span class="font-accent text-xs text-amber-400 uppercase tracking-widest mb-3 block font-bold">02 / Summit</span>
+                                        <h4 class="font-heading text-3xl md:text-4xl font-bold mb-3">HIKING</h4>
+                                    </div>
+                                    <div class="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center transform translate-y-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100 bg-white/10 backdrop-blur-sm">
+                                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 13L13 1M13 1H4M13 1V10" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </div>
+                                </div>
+                                <p class="text-white/80 text-sm font-accent leading-relaxed max-w-sm transform transition-all duration-500 group-hover:text-white mt-2">
+                                    Trek through scenic trails, from misty mountains to coastal cliffs, and discover landscapes that leave you speechless.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. WHY CHOOSE US SECTION -->
+        <section id="why-us" class="relative min-h-screen py-32 px-6 md:px-20 flex flex-col justify-center z-10">
+            <div class="absolute top-1/2 right-0 w-[400px] h-[400px] bg-amber-900/30 rounded-full blur-[150px] -translate-y-1/2 pointer-events-none"></div>
+
+            <div class="max-w-7xl mx-auto w-full relative z-10">
+                <div class="text-center mb-20">
+                    <p class="font-accent uppercase text-amber-400 tracking-widest text-sm mb-3 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Core Principles</p>
+                    <h2 class="font-heading text-4xl md:text-5xl font-bold drop-shadow-lg">ADVENTURE YOU CAN TRUST</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="glass-card rounded-3xl p-8 hover:border-cyan-400/50 transition-colors duration-500 flex flex-col justify-between h-72 group">
+                        <span class="font-heading text-3xl text-white/20 transition-colors duration-500 group-hover:text-cyan-400/40">01</span>
+                        <div>
+                            <h4 class="font-heading text-lg font-bold mb-3 group-hover:text-cyan-300 transition-colors">EXPERT LOCAL GUIDES</h4>
+                            <p class="font-accent text-sm text-white/80 leading-relaxed">Elite mentorship to navigate and understand terrains safely and profoundly.</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-3xl p-8 hover:border-fuchsia-400/50 transition-colors duration-500 flex flex-col justify-between h-72 group">
+                        <span class="font-heading text-3xl text-white/20 transition-colors duration-500 group-hover:text-fuchsia-400/40">02</span>
+                        <div>
+                            <h4 class="font-heading text-lg font-bold mb-3 group-hover:text-fuchsia-300 transition-colors">CAREFULLY PLANNED ROUTES</h4>
+                            <p class="font-accent text-sm text-white/80 leading-relaxed">Every path meticulously mapped for maximum visual impact and peak excitement.</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-3xl p-8 hover:border-amber-400/50 transition-colors duration-500 flex flex-col justify-between h-72 group">
+                        <span class="font-heading text-3xl text-white/20 transition-colors duration-500 group-hover:text-amber-400/40">03</span>
+                        <div>
+                            <h4 class="font-heading text-lg font-bold mb-3 group-hover:text-amber-300 transition-colors">SAFETY-FIRST APPROACH</h4>
+                            <p class="font-accent text-sm text-white/80 leading-relaxed">Top-tier tactical gear and continuous communication arrays for total peace of mind.</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-3xl p-8 hover:border-emerald-400/50 transition-colors duration-500 flex flex-col justify-between h-72 group">
+                        <span class="font-heading text-3xl text-white/20 transition-colors duration-500 group-hover:text-emerald-400/40">04</span>
+                        <div>
+                            <h4 class="font-heading text-lg font-bold mb-3 group-hover:text-emerald-300 transition-colors">OFF THE BEATEN PATH</h4>
+                            <p class="font-accent text-sm text-white/80 leading-relaxed">Access coordinates unknown to the public. True raw environments.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. CALL TO ACTION -->
+        <section id="cta" class="relative min-h-screen flex items-center justify-center text-center px-6 overflow-hidden z-10 transition-colors duration-1000 rounded-t-[3rem]">
+            <div class="relative z-20 max-w-5xl">
+                <h2 class="font-heading text-5xl md:text-7xl font-bold uppercase mb-8 leading-[1.1] text-white tracking-tight drop-shadow-xl" id="cta-title">
+                    YOUR NEXT ADVENTURE <br> 
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 drop-shadow-none" id="cta-gradient">STARTS HERE</span>
+                </h2>
+                <p class="font-accent text-white/90 text-base md:text-lg max-w-2xl mx-auto mb-12 leading-relaxed drop-shadow-md" id="cta-desc">
+                    Step out of the ordinary and into the extraordinary. Whether you're chasing waves or conquering peaks, your journey begins with us.
+                </p>
+                <button class="cta-glow relative font-accent bg-white text-black border border-white rounded-full px-12 py-5 text-sm uppercase font-bold tracking-widest transition-transform duration-500 hover:scale-105 shadow-[0_0_30px_rgba(255,255,255,0.3)]" id="cta-btn">
+                    Book Your Experience
+                </button>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="relative text-white/60 py-12 px-6 md:px-20 border-t border-white/10 z-10 transition-colors duration-1000" id="footer">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
+                <div class="font-heading text-xl font-bold text-white tracking-widest drop-shadow-md" id="footer-logo">BEYOND</div>
+                <div class="font-accent text-sm flex gap-8">
+                    <a href="#" class="hover:text-cyan-400 transition-colors duration-300">Instagram</a>
+                    <a href="#" class="hover:text-fuchsia-400 transition-colors duration-300">Vimeo</a>
+                    <a href="#" class="hover:text-amber-400 transition-colors duration-300">Privacy</a>
+                </div>
+                <div class="font-accent text-xs">
+                    &copy; 2026 Beyond Experiences. All rights reserved.
+                </div>
+            </div>
+        </footer>
+
+    </main>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        // --- 1. SMOOTH SCROLL (Lenis) ---
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smooth: true
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+
+        // --- 2. DYNAMIC CURSOR ---
+        const dot = document.getElementById('cursor-dot');
+        const ring = document.getElementById('cursor-ring');
+
+        window.addEventListener('mousemove', (e) => {
+            gsap.to(dot, { x: e.clientX, y: e.clientY, duration: 0.1 });
+            gsap.to(ring, { x: e.clientX, y: e.clientY, duration: 0.3, ease: "power2.out" });
+        });
+
+        const hoverTargets = document.querySelectorAll('button, a, .glass-card, .group');
+        hoverTargets.forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                ring.style.width = '70px';
+                ring.style.height = '70px';
+                ring.style.borderColor = 'rgba(0, 220, 130, 0.8)';
+                ring.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                ring.style.backdropFilter = 'blur(4px)';
+            });
+            el.addEventListener('mouseleave', () => {
+                ring.style.width = '40px';
+                ring.style.height = '40px';
+                ring.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                ring.style.backgroundColor = 'transparent';
+                ring.style.backdropFilter = 'none';
+            });
+        });
+
+
+        // --- 3. THREE.JS IMMERSIVE DEPTH SCENE (Round Particles) ---
+        const container = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 50;
+
+        // Fully transparent renderer to let the AI background show through
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setClearColor(0x000000, 0); 
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // CREATE ROUND PARTICLE TEXTURE
+        function createCircleTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.8)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
+            return new THREE.CanvasTexture(canvas);
+        }
+        
+        const circleTexture = createCircleTexture();
+        const particleCount = 4500;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+
+        const colorOcean = new THREE.Color('#00f2fe');
+        const colorJungle = new THREE.Color('#ff0844');
+        const colorSummit = new THREE.Color('#ffffff');
+
+        for (let i = 0; i < particleCount * 3; i += 3) {
+            positions[i] = (Math.random() - 0.5) * 180;
+            positions[i + 1] = (Math.random() - 0.5) * 180;
+            positions[i + 2] = (Math.random() - 0.5) * 400;
+
+            const zVal = positions[i + 2];
+            let mixedColor = colorOcean.clone();
+
+            if (zVal > -50) {
+                mixedColor.lerp(colorOcean, 1);
+            } else if (zVal > -200) {
+                mixedColor.lerp(colorJungle, Math.abs(zVal + 50) / 150);
+            } else {
+                mixedColor.lerp(colorSummit, Math.abs(zVal + 200) / 200);
+            }
+
+            colors[i] = mixedColor.r;
+            colors[i + 1] = mixedColor.g;
+            colors[i + 2] = mixedColor.b;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        // Use the custom circle texture instead of default squares
+        const material = new THREE.PointsMaterial({
+            size: 0.8,
+            map: circleTexture,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.9,
+            alphaTest: 0.01,
+            depthWrite: false, // Prevents overlapping black square artifacts
+            blending: THREE.AdditiveBlending
+        });
+
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+
+        let targetCameraZ = 50;
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            camera.position.z += (targetCameraZ - camera.position.z) * 0.05;
+            
+            particles.rotation.z += 0.0003;
+            particles.rotation.y += 0.0002;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+
+        // --- 4. GSAP SCROLL & ORCHESTRATION ---
+
+        ScrollTrigger.create({
+            trigger: "#lenis-wrapper",
+            start: "top top",
+            end: "bottom bottom",
+            onUpdate: (self) => {
+                targetCameraZ = 50 - (self.progress * 350);
+            }
+        });
+
+        // 🔥 BACKGROUND PARALLAX (TOP → BOTTOM SCROLL)
+gsap.to("#global-bg::before", {
+    y: 200,
+    ease: "none",
+    scrollTrigger: {
+        trigger: "#lenis-wrapper",
+        start: "top top",
+        end: "bottom bottom",
+        scrub: true
+    }
+});
+
+gsap.to("#global-bg::after", {
+    y: 200,
+    ease: "none",
+    scrollTrigger: {
+        trigger: "#lenis-wrapper",
+        start: "top top",
+        end: "bottom bottom",
+        scrub: true
+    }
+});
+
+// 🔥 REAL BACKGROUND SCROLL
+gsap.to(".bg-left", {
+    y: 150,
+    ease: "none",
+    scrollTrigger: {
+        trigger: "#lenis-wrapper",
+        start: "top top",
+        end: "bottom bottom",
+        scrub: true
+    }
+});
+
+gsap.to(".bg-right", {
+    y: 150,
+    ease: "none",
+    scrollTrigger: {
+        trigger: "#lenis-wrapper",
+        start: "top top",
+        end: "bottom bottom",
+        scrub: true
+    }
+});
+
+        // Hero Intro Reveal
+        const tlHero = gsap.timeline();
+        tlHero.to(".hero-text", { y: "0%", duration: 1.5, ease: "power4.out", stagger: 0.15, delay: 0.2 })
+              .to(".hero-reveal", { opacity: 1, y: 0, duration: 1, ease: "power2.out", stagger: 0.2 }, "-=0.8");
+
+        // Hero container fade
+        gsap.to("#hero .relative.z-20", {
+            opacity: 0,
+            y: -100,
+            scrollTrigger: {
+                trigger: "#hero", start: "top top", end: "center top", scrub: true
+            }
+        });
+
+        // About Line-by-Line Reveal
+        gsap.utils.toArray('.about-line').forEach((line) => {
+            gsap.fromTo(line, { y: "110%" }, {
+                y: "0%",
+                ease: "power3.out",
+                duration: 1.2,
+                scrollTrigger: {
+                    trigger: "#about",
+                    start: "top 75%",
+                }
+            });
+        });
+
+        // Experiences Horizontal Scroll
+        const horizontalWrapper = document.querySelector('.horizontal-container');
+        gsap.to(horizontalWrapper, {
+            x: "-50vw", 
+            ease: "none",
+            scrollTrigger: {
+                trigger: "#experiences .pin-wrapper",
+                pin: true,
+                scrub: 1,
+                start: "top top",
+                end: "+=120%"
+            }
+        });
+
+        // Parallax for Experience images
+        gsap.utils.toArray('.img-parallax').forEach(img => {
+    gsap.to(img, {
+        y: -120, // 👈 THIS makes it move UP when scrolling
+        scale: 1.2, // slight zoom for depth
+        ease: "none",
+        scrollTrigger: {
+            trigger: img,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: true
+        }
+    });
+});
+
+        // Why Trust Us Cards Cascade
+        gsap.from(".glass-card", {
+            opacity: 0,
+            y: 80,
+            duration: 1,
+            stagger: 0.15,
+            ease: "power3.out",
+            scrollTrigger: {
+                trigger: "#why-us",
+                start: "top 70%",
+            }
+        });
+
+        // CTA Section Glassmorphism White Summit Transition
+        // This transitions the dark overlay to a bright frosted glass effect over the AI image
+        const tlCTA = gsap.timeline({
+            scrollTrigger: {
+                trigger: "#cta",
+                start: "top 60%",
+                end: "center center",
+                scrub: 1,
+            }
+        });
+        
+        // Target the pseudo element of the global background to brighten it beautifully
+        const styleSheet = document.createElement("style");
+        document.head.appendChild(styleSheet);
+        
+        tlCTA.to("#cta", { backgroundColor: "rgba(255,255,255,0.8)", backdropFilter: "blur(20px)" })
+             .to("#footer", { backgroundColor: "rgba(255,255,255,0.8)", backdropFilter: "blur(20px)", borderTopColor: "rgba(0,0,0,0.1)" }, "<")
+             .to("#cta-title", { color: "#000000" }, "<")
+             .to("#cta-desc", { color: "#333333", textShadow: "none" }, "<")
+             .to("#footer-logo", { color: "#000000", textShadow: "none" }, "<")
+             .to("footer", { color: "#555555" }, "<")
+             .to("#cta-btn", { backgroundColor: "#000", color: "#fff", borderColor: "#000", boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }, "<")
+             .to("nav", { backgroundColor: "rgba(255,255,255,0.7)", borderBottomColor: "rgba(0,0,0,0.1)" }, "<")
+             .to("nav div.font-heading", { color: "#000000", textShadow: "none" }, "<")
+             .to("nav a", { color: "#333333", textShadow: "none" }, "<")
+             .to("nav button", { color: "#000000", borderColor: "rgba(0,0,0,0.2)", backgroundColor: "transparent" }, "<");
+
+    </script>
+</body>
+
+</html>
